@@ -29,10 +29,12 @@ public class NetHelper {
     public static String BaseUrl="";
     private MySubscriber mySubscriber;
     private boolean isCache=false;
-    private StringBuffer messages=new StringBuffer();//存储日志消息
+    private static StringBuffer messages=new StringBuffer();//存储日志消息
 
     public NetHelper() {
-        initOkHttpClient();
+        if(okHttpClient==null) {
+            initOkHttpClient();
+        }
     }
 
 
@@ -44,6 +46,9 @@ public class NetHelper {
     }
 
     public static void init(Application application,String baseUrl){
+        if(okHttpClient==null) {
+            initOkHttpClient();
+        }
         setApplication(application);
         BaseUrl=baseUrl;
         retrofit = new Retrofit.Builder()
@@ -116,7 +121,7 @@ public class NetHelper {
     /**
      * 初始化okhttp配置
      */
-    private void initOkHttpClient(){
+    private static void initOkHttpClient(){
         OkHttpClient.Builder builder=new OkHttpClient.Builder();
         builder.connectTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS);
         //添加日志打印过滤器
@@ -128,7 +133,7 @@ public class NetHelper {
      * http日志拦截过滤器
      * @return
      */
-    private Interceptor getLogInterceptor(){
+    private static Interceptor getLogInterceptor(){
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger(){
             @Override
             public void log(String message) {
