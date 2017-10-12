@@ -1,9 +1,13 @@
 package com.zx.xsk.nethelper;
 
 import android.app.Application;
+import android.database.sqlite.SQLiteDatabase;
 
 import com.orhanobut.logger.Logger;
-import com.zx.xsk.nethelper.dbbeans.ResponseBean;
+import com.xsk.greendao.gen.DaoMaster;
+import com.xsk.greendao.gen.DaoSession;
+import com.xsk.greendao.gen.NetResponseBeanDao;
+import com.zx.xsk.nethelper.dbbeans.NetResponseBean;
 import com.zx.xsk.nethelper.icontext.IApplication;
 import com.zx.xsk.nethelper.util.CacheManager;
 import com.zx.xsk.sutil.SettingsUtil;
@@ -15,8 +19,6 @@ import java.util.Currency;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import io.realm.Realm;
-import io.realm.RealmConfiguration;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -38,8 +40,6 @@ import rx.Observable;
 
 public class NetHelper {
     private static Application application;
-    private static Realm realm;
-    private static RealmConfiguration realmConfig;
     private static Retrofit retrofit;
     public static OkHttpClient okHttpClient;
     public static NetHelper Instance;
@@ -48,6 +48,8 @@ public class NetHelper {
     private static long overtime = 60 * 1000;//缓存有效时间，默认1分钟
     private static final int DEFAULT_TIMEOUT = 5;//超时时间
     private static StringBuffer messages = new StringBuffer();//存储日志消息
+    private static NetResponseBeanDao netResponseBeanDao;
+
 
     public NetHelper() {
         if (okHttpClient == null) {
@@ -71,9 +73,13 @@ public class NetHelper {
         IApplication.setApplication(application);
 
         //初始化数据库
-        realmConfig = new RealmConfiguration
-                .Builder(application)
-                .build();
+        DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(application, "recluse-db", null);
+        SQLiteDatabase db = helper.getWritableDatabase();
+        DaoMaster daoMaster = new DaoMaster(db);
+        DaoSession daoSession = daoMaster.newSession();
+        netResponseBeanDao = daoSession.getNetResponseBeanDao();
+
+
         BaseUrl = baseUrl;
         retrofit = new Retrofit.Builder()
                 .client(okHttpClient)
@@ -205,17 +211,21 @@ public class NetHelper {
                     //缓存模式开启，有网络状态下也会访问本地缓存
                     if (isCache == true) {
                         //读取数据库缓存
-                        realm = Realm.getInstance(realmConfig);
-                        ResponseBean responseBean = realm
-                                .where(ResponseBean.class)
-                                .equalTo("key", key)
-                                .findFirst();
-                        String bean = "";
-                        //判断数据是否过期
-                        if (responseBean.getOvertime() + responseBean.getUpdateTime() > System.currentTimeMillis()) {
-                            bean = responseBean.getResponseContent();
-                            if (bean != null && !bean.isEmpty()) {
-                                response = getCacheResponse(request, bean);
+                        List<NetResponseBean> list = netResponseBeanDao
+                                .queryBuilder()
+                                .where(NetResponseBeanDao.Properties.Key.eq(key))
+                                .list();
+                        if (list.size() > 0) {
+                            NetResponseBean responseBean = list.get(0);
+                            String bean = "";
+                            //判断数据是否过期
+                            if (responseBean.getOvertime() + responseBean.getUpdateTime() > System.currentTimeMillis()) {
+                                bean = responseBean.getResponseContent();
+                                if (bean != null && !bean.isEmpty()) {
+                                    response = getCacheResponse(request, bean);
+                                } else {
+                                    response = getNetResponse(chain, request, key);
+                                }
                             } else {
                                 response = getNetResponse(chain, request, key);
                             }
@@ -231,21 +241,19 @@ public class NetHelper {
                     //读出响应
                     String bean = "";
                     //缓存模式，直接读取本地缓存
-                    if(isCache==true) {
+                    if (isCache == true) {
                         //读取数据库缓存
-                        realm = Realm.getInstance(realmConfig);
-                        ResponseBean responseBean = realm
-                                .where(ResponseBean.class)
-                                .equalTo("key", key)
-                                .findFirst();
-                        bean = responseBean.getResponseContent();
-                        if (bean == null) {
-                            bean = "";
+                        List<NetResponseBean> list = netResponseBeanDao
+                                .queryBuilder()
+                                .where(NetResponseBeanDao.Properties.Key.eq(key))
+                                .list();
+                        if (list.size() > 0) {
+                            NetResponseBean responseBean = list.get(0);
+                            bean = responseBean.getResponseContent();
                         }
                     }
                     response = getCacheResponse(request, bean);
                 }
-                realm.close();
                 return response;
             }
         };
@@ -297,38 +305,36 @@ public class NetHelper {
                 //重新构建body，原因在于body只能调用一次，之后就关闭了。
                 .body(ResponseBody.create(type, bs))
                 .build();
-        //缓存数据
-        //硬盘缓存
-        //CacheManager.getInstance().setCache(key,new String(bs,"utf-8"));
         //数据库缓存
-        realm = Realm.getInstance(realmConfig);
-        realm.executeTransaction(new Realm.Transaction() {
-            @Override
-            public void execute(Realm realm) {
-                ResponseBean responseBean = realm.where(ResponseBean.class).equalTo("key", key).findFirst();
-                if (responseBean != null) {
-                    responseBean.setUpdateTime(System.currentTimeMillis());
-                    try {
-                        responseBean.setResponseContent(new String(bs, "utf-8"));
-                    } catch (UnsupportedEncodingException e) {
+        List<NetResponseBean> list = netResponseBeanDao
+                .queryBuilder()
+                .where(NetResponseBeanDao.Properties.Key.eq(key))
+                .list();
+        if (list.size() > 0) {
+            NetResponseBean responseBean = list.get(0);
+            responseBean.setUpdateTime(System.currentTimeMillis());
+            try {
+                responseBean.setResponseContent(new String(bs, "utf-8"));
+            } catch (UnsupportedEncodingException e) {
 
-                    }
-                } else {
-                    ResponseBean responseBean2 = realm.createObject(ResponseBean.class);
-                    responseBean2.setId(System.currentTimeMillis());
-                    responseBean2.setKey(key);
-                    responseBean2.setUpdateTime(System.currentTimeMillis());
-                    try {
-                        responseBean2.setResponseContent(new String(bs, "utf-8"));
-                    } catch (UnsupportedEncodingException e) {
-
-                    }
-                    responseBean2.setOvertime(overtime);
-                }
             }
-        });
+            netResponseBeanDao.update(responseBean);
+        } else {
+            NetResponseBean responseBean2 = new NetResponseBean();
+            responseBean2.setId(System.currentTimeMillis());
+            responseBean2.setKey(key);
+            responseBean2.setUpdateTime(System.currentTimeMillis());
+            try {
+                responseBean2.setResponseContent(new String(bs, "utf-8"));
+            } catch (UnsupportedEncodingException e) {
+
+            }
+            responseBean2.setOvertime(overtime);
+            netResponseBeanDao.insert(responseBean2);
+        }
         return response;
     }
+
     /**
      * 请求网络不缓存数据
      *

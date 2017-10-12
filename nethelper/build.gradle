@@ -1,6 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
-apply plugin: 'realm-android'
+apply plugin: 'org.greenrobot.greendao'
 group='com.github.shajinyang'
 android {
     compileSdkVersion 25
@@ -12,7 +12,11 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
+    }
+    greendao {
+        schemaVersion 1 //数据库版本号
+        daoPackage 'com.xsk.greendao.gen'//自动生成的工具类的包名
+        targetGenDir 'src/main/java'//路径
     }
     buildTypes {
         release {
@@ -40,4 +44,6 @@ dependencies {
     compile 'io.reactivex:rxandroid:1.2.1'
     compile 'com.jakewharton:disklrucache:2.0.2'
     compile 'com.github.shajinyang:SjyndroidUtil:1.0.5'
+    /*greenDao框架*/
+    compile 'org.greenrobot:greendao:3.2.0'
 }
