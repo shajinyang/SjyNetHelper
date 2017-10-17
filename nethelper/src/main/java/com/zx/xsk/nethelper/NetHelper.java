@@ -197,11 +197,11 @@ public class NetHelper {
             @Override
             public Response intercept(Chain chain) throws IOException {
                 Request request = chain.request();
-                Buffer buffer = new Buffer();
-                request.body().writeTo(buffer);
-                String params = buffer.readString(Charset.forName("UTF-8")); //获取请求参数
                 final String key;
                 if (request.method().equals("POST")) {
+                    Buffer buffer = new Buffer();
+                    request.body().writeTo(buffer);
+                    String params = buffer.readString(Charset.forName("UTF-8"));//获取请求参数
                     key = CacheManager.encryptMD5(request.url().toString() + params);
                 } else {
                     key = CacheManager.encryptMD5(request.url().toString());

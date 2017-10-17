@@ -11,6 +11,7 @@ import android.view.MenuItem;
 import android.widget.TextView;
 
 import com.orhanobut.logger.Logger;
+import com.zx.xsk.nethelper.BaseSubscriber;
 import com.zx.xsk.nethelper.HttpResult;
 import com.zx.xsk.nethelper.NetHelper;
 
@@ -39,7 +40,8 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
-        getNet();
+//        getNet();
+        getNetNews();
     }
 
     @Override
@@ -99,6 +101,37 @@ public class MainActivity extends AppCompatActivity {
 
                     }
 
+                });
+
+    }
+    public void getNetNews(){
+        NetHelper.getInstance()
+                .create(ApiService.class)
+                .getDailyList()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .subscribe(new BaseSubscriber<DailyListBean>() {
+
+
+                    @Override
+                    public void onStartNet() {
+
+                    }
+
+                    @Override
+                    public void onErrorNet(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onCompletedNet() {
+
+                    }
+
+                    @Override
+                    public void onNextNet(DailyListBean dailyListBean) {
+
+                    }
                 });
 
     }
