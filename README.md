@@ -94,6 +94,40 @@
         这里BaseSubscriber可以自己定义，如果你需要对返回参数统一处理，可以
         自定义YourSubscriber 继承BaseSubscriber,然后在YourSubscriber中处理
         你自己的逻辑。
+        示例：
+        public abstract class MySubscriber<T> extends BaseSubscriber<HttpResult<T>> {
+            abstract void onSuccess(T t);
+            abstract void onErrorNet();
+            abstract void onFinish();
+
+            @Override
+            public void onStartNet() {
+
+            }
+
+            @Override
+            public void onErrorNet(Throwable throwable) {
+                Toaster.showToast(throwable.getMessage());
+                onErrorNet();
+            }
+
+            @Override
+            public void onCompletedNet() {
+                onFinish();
+            }
+
+            @Override
+            public void onNextNet(HttpResult<T> t) {
+                if("0".equals(t.error)){
+                    if(t.error!=null) {
+                        onSuccess(t.data);
+                    }
+                }else {
+                    Toaster.showToast(t.info+"");
+                }
+
+            }
+        }
 
 #### 其他说明
     有时候特殊的业务需求，可能会有多个baseurl ，可以在apiservice 的url注解添加全路径
