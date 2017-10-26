@@ -5,18 +5,33 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Base64;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.orhanobut.logger.Logger;
 import com.zx.xsk.nethelper.BaseSubscriber;
 import com.zx.xsk.nethelper.HttpResult;
 import com.zx.xsk.nethelper.NetHelper;
+import com.zx.xsk.sutil.DateUtil;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.HashMap;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -25,6 +40,7 @@ import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
     private TextView tv;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,12 +52,10 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                getNet();
             }
         });
-//        getNet();
-        getNetNews();
+        getNet();
     }
 
     @Override
@@ -67,7 +81,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void getNet(){
-
         HashMap<String,Object> map=new HashMap<>();
         map.put("loginstatus","2");
         map.put("tel","18762602540");
@@ -104,37 +117,7 @@ public class MainActivity extends AppCompatActivity {
                 });
 
     }
-    public void getNetNews(){
-        NetHelper.getInstance()
-                .create(ApiService.class)
-                .getDailyList()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(new BaseSubscriber<DailyListBean>() {
 
-
-                    @Override
-                    public void onStartNet() {
-
-                    }
-
-                    @Override
-                    public void onErrorNet(Throwable e) {
-
-                    }
-
-                    @Override
-                    public void onCompletedNet() {
-
-                    }
-
-                    @Override
-                    public void onNextNet(DailyListBean dailyListBean) {
-
-                    }
-                });
-
-    }
 
 
 }

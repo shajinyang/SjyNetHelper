@@ -130,6 +130,18 @@
         }
 
 #### 其他说明
+
+#### 添加公共头
+    （1）可以在初始化时添加公共头部参数
+    NetHelper.initStaticHeader(HashMap<String,String> map);
+    （2）通过retrofit  在apiservice注解里添加
+    （3）自己新增拦截器
+
+#### 自定义拦截器
+    NetHelper.init(this,yourapi,interceptor);
+    可自定义添加单个或多个拦截器
+
+
     有时候特殊的业务需求，可能会有多个baseurl ，可以在apiservice 的url注解添加全路径
 
 

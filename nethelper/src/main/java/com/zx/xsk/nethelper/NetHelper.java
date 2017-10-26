@@ -15,8 +15,12 @@ import com.zx.xsk.sutil.SettingsUtil;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Currency;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.Interceptor;
@@ -50,6 +54,9 @@ public class NetHelper {
     private static StringBuffer messages = new StringBuffer();//存储日志消息
     private static NetResponseBeanDao netResponseBeanDao;
 
+    private static HashMap<String,String> headlist;//头部参数信息，可由调用者传入
+    private static Interceptor[] outinterceptor;//拦截器，可由调用者传入
+
 
     public NetHelper() {
         if (okHttpClient == null) {
@@ -65,7 +72,24 @@ public class NetHelper {
         return Instance;
     }
 
+    /**
+     * 初始化
+     * @param application
+     * @param baseUrl 基础url
+     */
     public static void init(Application application, String baseUrl) {
+        init(application,baseUrl,new Interceptor[]{});
+    }
+    /**
+     * 初始化
+     * @param application
+     * @param baseUrl 基础url
+     * @param minterceptor 过滤器
+     */
+    public static void init(Application application, String baseUrl,Interceptor... minterceptor) {
+        if(minterceptor!=null){
+            outinterceptor=minterceptor;
+        }
         if (okHttpClient == null) {
             initOkHttpClient();
         }
@@ -78,8 +102,6 @@ public class NetHelper {
         DaoMaster daoMaster = new DaoMaster(db);
         DaoSession daoSession = daoMaster.newSession();
         netResponseBeanDao = daoSession.getNetResponseBeanDao();
-
-
         BaseUrl = baseUrl;
         retrofit = new Retrofit.Builder()
                 .client(okHttpClient)
@@ -88,6 +110,16 @@ public class NetHelper {
                 .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
                 .build();
     }
+
+    /**
+     * 添加静态头部
+     * @param alist
+     * @return
+     */
+    public static void initStaticHeader(HashMap<String,String> alist){
+        headlist=alist;
+    }
+
 
     public static Application getApplication() {
         return application;
@@ -158,9 +190,46 @@ public class NetHelper {
         builder.connectTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)//连接超时设置
                 .retryOnConnectionFailure(true)//错误重连
                 .addInterceptor(getLogInterceptor()) //添加日志打印过滤器
+                .addInterceptor(getHeaderInterceptor())//添加公共头参数
                 .addInterceptor(getCacheInterceptor()); //添加缓存过滤
+        if(outinterceptor!=null&&outinterceptor.length>0){
+            for (Interceptor intercep:outinterceptor
+                 ) {
+                builder.addInterceptor(intercep);//添加外部过滤器
+            }
+        }
         okHttpClient = builder.build();
     }
+
+
+    /**
+     * 添加公共头
+     * @return
+     */
+    private static Interceptor getHeaderInterceptor(){
+        Interceptor interceptor=new Interceptor() {
+            @Override
+            public Response intercept(Chain chain) throws IOException {
+                Request request= chain.request();
+                Request.Builder builder=request.newBuilder();
+                if(headlist==null){
+                    return chain.proceed(request);
+                }
+                Iterator ite=headlist.entrySet().iterator();
+                if(ite.hasNext()){
+                    Map.Entry entry = (Map.Entry) ite.next();
+                    String key = (String) entry.getKey();
+                    String val = (String) entry.getValue();
+                    builder.addHeader(key,val);
+                }
+                return chain.proceed(builder.build());
+            }
+        };
+        return interceptor;
+    }
+
+
+
 
     /**
      * http日志拦截过滤器
