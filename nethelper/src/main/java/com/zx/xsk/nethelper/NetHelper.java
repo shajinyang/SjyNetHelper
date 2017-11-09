@@ -97,7 +97,7 @@ public class NetHelper {
         IApplication.setApplication(application);
 
         //初始化数据库
-        DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(application, "recluse-db", null);
+        DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(application, "sjynetcache-db", null);
         SQLiteDatabase db = helper.getWritableDatabase();
         DaoMaster daoMaster = new DaoMaster(db);
         DaoSession daoSession = daoMaster.newSession();
