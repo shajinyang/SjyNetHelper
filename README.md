@@ -23,7 +23,7 @@
       第二步：
       在module的gradle里配置
       dependencies {
-      	        compile 'com.github.shajinyang:SjyNetHelper:1.1.1'
+      	        compile 'com.github.shajinyang:SjyNetHelper:2.0.0'
       	}
 
       	第三步：
