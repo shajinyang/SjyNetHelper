@@ -5,7 +5,7 @@ import android.widget.Toast;
 
 import com.orhanobut.logger.Logger;
 import com.zx.xsk.nethelper.icontext.IApplication;
-import com.zx.xsk.sutil.SettingsUtil;
+import com.zx.xsk.nethelper.util.SettingsUtil;
 
 import rx.Subscriber;
 

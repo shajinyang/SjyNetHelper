@@ -6,7 +6,7 @@ import com.google.gson.Gson;
 import com.zx.xsk.nethelper.icontext.IApplication;
 import com.zx.xsk.nethelper.inters.EnhancedCallback;
 import com.zx.xsk.nethelper.util.CacheManager;
-import com.zx.xsk.sutil.SettingsUtil;
+import com.zx.xsk.nethelper.util.SettingsUtil;
 
 import java.io.IOException;
 import java.nio.charset.Charset;

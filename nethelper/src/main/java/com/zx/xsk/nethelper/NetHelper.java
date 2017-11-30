@@ -10,7 +10,7 @@ import com.xsk.greendao.gen.NetResponseBeanDao;
 import com.zx.xsk.nethelper.dbbeans.NetResponseBean;
 import com.zx.xsk.nethelper.icontext.IApplication;
 import com.zx.xsk.nethelper.util.CacheManager;
-import com.zx.xsk.sutil.SettingsUtil;
+import com.zx.xsk.nethelper.util.SettingsUtil;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
